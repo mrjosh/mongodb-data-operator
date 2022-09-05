@@ -1,0 +1,24 @@
+# permissions for end users to edit mongodbconfigs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: mongodbconfig-editor-role
+rules:
+- apiGroups:
+  - mongo.snappcloud.io
+  resources:
+  - mongodbconfigs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - mongo.snappcloud.io
+  resources:
+  - mongodbconfigs/status
+  verbs:
+  - get

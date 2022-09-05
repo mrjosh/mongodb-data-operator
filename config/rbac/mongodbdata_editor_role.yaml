@@ -1,0 +1,24 @@
+# permissions for end users to edit mongodbdata.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: mongodbdata-editor-role
+rules:
+- apiGroups:
+  - mongo.snappcloud.io
+  resources:
+  - mongodbdata
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - mongo.snappcloud.io
+  resources:
+  - mongodbdata/status
+  verbs:
+  - get

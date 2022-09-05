@@ -1,0 +1,20 @@
+# permissions for end users to view mongodbdata.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: mongodbdata-viewer-role
+rules:
+- apiGroups:
+  - mongo.snappcloud.io
+  resources:
+  - mongodbdata
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - mongo.snappcloud.io
+  resources:
+  - mongodbdata/status
+  verbs:
+  - get

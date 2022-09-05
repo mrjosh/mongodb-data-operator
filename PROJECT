@@ -1,0 +1,28 @@
+domain: snappcloud.io
+layout:
+- go.kubebuilder.io/v4-alpha
+plugins:
+  manifests.sdk.operatorframework.io/v2: {}
+  scorecard.sdk.operatorframework.io/v2: {}
+projectName: mongodb-data-operator
+repo: github.com/mrjosh/mongodb-data-operator
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: snappcloud.io
+  group: mongo
+  kind: MongoDBConfig
+  path: github.com/mrjosh/mongodb-data-operator/api/v1
+  version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: snappcloud.io
+  group: mongo
+  kind: MongoDBData
+  path: github.com/mrjosh/mongodb-data-operator/api/v1
+  version: v1
+version: "3"

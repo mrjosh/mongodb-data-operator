@@ -1,0 +1,5 @@
+## Append samples you want in your CSV to this file as resources ##
+resources:
+- mongo_v1_mongodbconfig.yaml
+- mongo_v1_mongodbdata.yaml
+#+kubebuilder:scaffold:manifestskustomizesamples

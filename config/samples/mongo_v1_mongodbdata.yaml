@@ -1,0 +1,6 @@
+apiVersion: mongo.snappcloud.io/v1
+kind: MongoDBData
+metadata:
+  name: mongodbdata-sample
+spec:
+  # TODO(user): Add fields here

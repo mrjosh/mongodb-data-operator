@@ -17,6 +17,8 @@ limitations under the License.
 package v1
 
 import (
+	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -34,7 +36,22 @@ type MongoDBConfigSpec struct {
 
 // MongoDBConfigStatus defines the observed state of MongoDBConfig
 type MongoDBConfigStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
+	Conditions MongoDBConfigConditions    `json:"conditions,omitempty"`
+	Ready      v1.ConditionStatus         `json:"ready,omitempty"`
+	Status     MongoDBConfigConditionType `json:"status,omitempty"`
+}
+
+type MongoDBConfigConditions []MongoDBConfigCondition
+
+type MongoDBConfigCondition struct {
+	Type   MongoDBConfigConditionType `json:"type"`
+	Status corev1.ConditionStatus     `json:"status"`
+	// Last time the condition transitioned from one status to another.
+	LastTransitionTime metav1.Time `json:"lastTransitionTime"`
+	// Unique, one-word, CamelCase reason for the condition's last transition.
+	Reason string `json:"reason,omitempty"`
+	// Human-readable message indicating details about last transition.
+	Message string `json:"message,omitempty"`
 }
 
 //+kubebuilder:object:root=true
@@ -61,3 +78,10 @@ type MongoDBConfigList struct {
 func init() {
 	SchemeBuilder.Register(&MongoDBConfig{}, &MongoDBConfigList{})
 }
+
+type MongoDBConfigConditionType string
+
+const (
+	Ready               MongoDBConfigConditionType = "Ready"
+	NoMongoURLSpecified MongoDBConfigConditionType = "NoMongoURLSpecified"
+)

@@ -12,6 +12,8 @@ spec:
     kind: MongoDBData
     listKind: MongoDBDataList
     plural: mongodbdata
+    shortNames:
+    - mdbd
     singular: mongodbdata
   scope: Namespaced
   versions:

@@ -38,7 +38,7 @@ spec:
         - /manager
         args:
         - --leader-elect
-        image: controller:latest
+        image: localhost:5001/mongodb-data-operator:latest
         name: manager
         securityContext:
           allowPrivilegeEscalation: false

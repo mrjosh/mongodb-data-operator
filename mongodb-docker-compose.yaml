@@ -1,0 +1,15 @@
+version: '3.9'
+
+services:
+  mongodb:
+    image: mongo:6.0.1
+    ports:
+      - 27017:27017
+    volumes:
+      - snappcloud-mongodb:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=snappcloud
+      - MONGO_INITDB_ROOT_PASSWORD=super-secure-password
+
+volumes:
+  snappcloud-mongodb:

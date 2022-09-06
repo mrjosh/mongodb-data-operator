@@ -3,4 +3,5 @@ kind: MongoDBConfig
 metadata:
   name: mongodbconfig-sample
 spec:
-  # TODO(user): Add fields here
+  mongourl: "mongodb://snappcloud:super-secure-password@mongodb-data-operator-mongodb-1:27017/?authSource=admin"
+  collection: ""

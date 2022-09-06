@@ -17,8 +17,6 @@ limitations under the License.
 package v1
 
 import (
-	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -36,28 +34,17 @@ type MongoDBConfigSpec struct {
 
 // MongoDBConfigStatus defines the observed state of MongoDBConfig
 type MongoDBConfigStatus struct {
-	Conditions MongoDBConfigConditions    `json:"conditions,omitempty"`
-	Ready      v1.ConditionStatus         `json:"ready,omitempty"`
-	Status     MongoDBConfigConditionType `json:"status,omitempty"`
-}
-
-type MongoDBConfigConditions []MongoDBConfigCondition
-
-type MongoDBConfigCondition struct {
-	Type   MongoDBConfigConditionType `json:"type"`
-	Status corev1.ConditionStatus     `json:"status"`
-	// Last time the condition transitioned from one status to another.
-	LastTransitionTime metav1.Time `json:"lastTransitionTime"`
-	// Unique, one-word, CamelCase reason for the condition's last transition.
-	Reason string `json:"reason,omitempty"`
-	// Human-readable message indicating details about last transition.
-	Message string `json:"message,omitempty"`
+	Ready      string             `json:"ready,omitempty"`
+	Conditions []metav1.Condition `json:"conditions"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
 // MongoDBConfig is the Schema for the mongodbconfigs API
+// +kubebuilder:printcolumn:name="READY",type=string,JSONPath=`.status.ready`,description=`Current state of the MongoDBConfig`
+// +operator-sdk:csv:customresourcedefinitions:displayName="MongoDBConfig"
+// +kubebuilder:resource:shortName=mdbc
 type MongoDBConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -84,4 +71,5 @@ type MongoDBConfigConditionType string
 const (
 	Ready               MongoDBConfigConditionType = "Ready"
 	NoMongoURLSpecified MongoDBConfigConditionType = "NoMongoURLSpecified"
+	ConnectError        MongoDBConfigConditionType = "ConnectError"
 )

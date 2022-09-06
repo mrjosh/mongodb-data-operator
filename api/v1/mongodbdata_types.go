@@ -49,6 +49,8 @@ type MongoDBDataStatus struct {
 // MongoDBData is the Schema for the mongodbdata API
 // +kubebuilder:printcolumn:name="State",type="string",JSONPath=".status.state",description="Current state of the MongoDBData"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp",description="CreationTimestamp is a timestamp representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations. Clients may not set this value. It is represented in RFC3339 form and is in UTC."
+// +operator-sdk:csv:customresourcedefinitions:displayName="MongoDBData"
+// +kubebuilder:resource:shortName=mdbd
 type MongoDBData struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

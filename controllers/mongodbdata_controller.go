@@ -24,12 +24,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/go-logr/logr"
 	mongov1 "github.com/mrjosh/mongodb-data-operator/api/v1"
 )
 
 // MongoDBDataReconciler reconciles a MongoDBData object
 type MongoDBDataReconciler struct {
 	client.Client
+	Log    logr.Logger
 	Scheme *runtime.Scheme
 }
 

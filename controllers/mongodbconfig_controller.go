@@ -20,9 +20,7 @@ import (
 	"context"
 	"time"
 
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
-	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -92,25 +90,15 @@ func (r *MongoDBConfigReconciler) Reconcile(ctx context.Context, req reconcile.R
 	// create a new mongodb client for connection validation
 	if _, err := mongodb.NewClientWithContext(ctx, mongoCfg.Spec.MongoURL); err != nil {
 
-		message := err.Error()
-
-		r.Recorder.Event(
+		err = r.setEventStatusCondition(
+			ctx,
 			mongoCfg,
-			corev1.EventTypeWarning,
-			string(mongov1.ConnectError),
-			message,
+			mongov1.ConnectError,
+			metav1.ConditionFalse,
+			err.Error(),
 		)
 
-		mongoCfg.Status.Ready = string(corev1.ConditionFalse)
-		apimeta.SetStatusCondition(&mongoCfg.Status.Conditions, metav1.Condition{
-			Type:               string(mongov1.ConnectError),
-			Status:             metav1.ConditionFalse,
-			Reason:             string(mongov1.ConnectError),
-			Message:            message,
-			ObservedGeneration: mongoCfg.Generation,
-		})
-
-		if err := r.Client.Status().Update(ctx, mongoCfg); err != nil {
+		if err != nil {
 			log.Error(err, "unable to update target's status object")
 			return requeue(err)
 		}
@@ -118,25 +106,15 @@ func (r *MongoDBConfigReconciler) Reconcile(ctx context.Context, req reconcile.R
 		return requeueWithDelay(30 * time.Second)
 	}
 
-	readyMessage := "Successfully connected to MongoDB database"
-
-	r.Recorder.Event(
+	err = r.setEventStatusCondition(
+		ctx,
 		mongoCfg,
-		corev1.EventTypeNormal,
-		string(mongov1.Ready),
-		readyMessage,
+		mongov1.Ready,
+		metav1.ConditionTrue,
+		"Successfully connected to MongoDB database",
 	)
 
-	mongoCfg.Status.Ready = string(corev1.ConditionTrue)
-	apimeta.SetStatusCondition(&mongoCfg.Status.Conditions, metav1.Condition{
-		Type:               string(mongov1.Ready),
-		Status:             metav1.ConditionTrue,
-		Reason:             string(mongov1.Ready),
-		Message:            readyMessage,
-		ObservedGeneration: mongoCfg.Generation,
-	})
-
-	if err := r.Client.Status().Update(ctx, mongoCfg); err != nil {
+	if err != nil {
 		log.Error(err, "unable to update target's status object")
 		return requeue(err)
 	}

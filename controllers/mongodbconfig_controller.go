@@ -44,10 +44,10 @@ type MongoDBConfigReconciler struct {
 	Recorder record.EventRecorder
 }
 
-//+kubebuilder:rbac:groups=mongo.snappcloud.io,resources=mongodbconfigs,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=mongo.snappcloud.io,resources=mongodbconfigs/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=mongo.snappcloud.io,resources=mongodbconfigs/finalizers,verbs=update
-//+kubebuilder:rbac:groups=core,resources=events,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=mongo.snappcloud.io,resources=mongodbconfigs,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=mongo.snappcloud.io,resources=mongodbconfigs/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=mongo.snappcloud.io,resources=mongodbconfigs/finalizers,verbs=update
+// +kubebuilder:rbac:groups=core,resources=events,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -86,32 +86,6 @@ func (r *MongoDBConfigReconciler) Reconcile(ctx context.Context, req reconcile.R
 	if !metaObj.GetDeletionTimestamp().IsZero() {
 		log.Info("ignoring", "reason", "object has a non-zero deletion timestamp")
 		return reconcile.Result{}, nil
-	}
-
-	if mongoCfg.Spec.MongoURL == "" {
-
-		r.Recorder.Event(
-			mongoCfg,
-			corev1.EventTypeWarning,
-			string(mongov1.NoMongoURLSpecified),
-			"Specifying an MongoURL for the MongoDBConfig is required",
-		)
-
-		mongoCfg.Status.Ready = string(corev1.ConditionFalse)
-		apimeta.SetStatusCondition(&mongoCfg.Status.Conditions, metav1.Condition{
-			Type:               string(mongov1.NoMongoURLSpecified),
-			Status:             metav1.ConditionFalse,
-			Reason:             string(mongov1.NoMongoURLSpecified),
-			Message:            "Specifying an MongoURL for the MongoDBConfig is required",
-			ObservedGeneration: mongoCfg.Generation,
-		})
-
-		if err := r.Client.Status().Update(ctx, mongoCfg); err != nil {
-			log.Error(err, "unable to update target's status object")
-			return requeue(err)
-		}
-
-		return doNotRequeue()
 	}
 
 	// try to connect to the mongodb url

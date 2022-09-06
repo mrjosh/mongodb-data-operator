@@ -25,9 +25,12 @@ import (
 
 // MongoDBConfigSpec defines the desired state of MongoDBConfig
 type MongoDBConfigSpec struct {
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Pattern=`(?m)mongodb:\/\/(?:(?:[^:]+):(?:[^@]+)?@)?(?:(?:(?:[^\/]+)|(?:\/.+.sock?),?)+)(?:\/([^\/\."*<>:\|\?]*))?(?:\?(?:(.+=.+)&?)+)*`
 	// MongoURL is a mongodb connection url
 	MongoURL string `json:"mongourl,omitempty"`
 
+	// +kubebuilder:validation:Required
 	// Collection is a mongodb collection name
 	Collection string `json:"collection,omitempty"`
 }
@@ -38,13 +41,13 @@ type MongoDBConfigStatus struct {
 	Conditions []metav1.Condition `json:"conditions"`
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="READY",type=string,JSONPath=`.status.ready`,description=`Current state of the MongoDBConfig`
+// +kubebuilder:resource:shortName=mdbc
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:resource:scope=Cluster
 
 // MongoDBConfig is the Schema for the mongodbconfigs API
-// +kubebuilder:printcolumn:name="READY",type=string,JSONPath=`.status.ready`,description=`Current state of the MongoDBConfig`
-// +operator-sdk:csv:customresourcedefinitions:displayName="MongoDBConfig"
-// +kubebuilder:resource:shortName=mdbc
 type MongoDBConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

@@ -12,10 +12,8 @@ spec:
     kind: MongoDBConfig
     listKind: MongoDBConfigList
     plural: mongodbconfigs
-    shortNames:
-    - mdbc
     singular: mongodbconfig
-  scope: Namespaced
+  scope: Cluster
   versions:
   - additionalPrinterColumns:
     - description: Current state of the MongoDBConfig
@@ -47,6 +45,7 @@ spec:
                 type: string
               mongourl:
                 description: MongoURL is a mongodb connection url
+                pattern: (?m)mongodb:\/\/(?:(?:[^:]+):(?:[^@]+)?@)?(?:(?:(?:[^\/]+)|(?:\/.+.sock?),?)+)(?:\/([^\/\."*<>:\|\?]*))?(?:\?(?:(.+=.+)&?)+)*
                 type: string
             type: object
           status:

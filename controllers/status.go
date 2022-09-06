@@ -23,7 +23,7 @@ func (r *MongoDBConfigReconciler) setEventStatusCondition(ctx context.Context, a
 		message,
 	)
 
-	adapter.Status.Ready = string(corev1.ConditionTrue)
+	adapter.Status.Ready = string(status)
 	apimeta.SetStatusCondition(&adapter.Status.Conditions, metav1.Condition{
 		Type:               string(reason),
 		Status:             status,

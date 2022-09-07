@@ -3,5 +3,5 @@ kind: MongoDBConfig
 metadata:
   name: mongo1
 spec:
+  collection: "xxx"
   mongourl: "mongodb://snappcloud:super-secure-password@mongodb-data-operator-mongodb-1:27017/?authSource=admin"
-  collection: "test-collection"

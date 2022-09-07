@@ -11,6 +11,26 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
+      path: /validate-mongo-snappcloud-io-v1-mongodbconfig
+  failurePolicy: Fail
+  name: vmongodbconfig.kb.io
+  rules:
+  - apiGroups:
+    - mongo.snappcloud.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - mongodbconfigs
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
       path: /validate-mongo-snappcloud-io-v1-mongodbdata
   failurePolicy: Fail
   name: vmongodbdata.kb.io

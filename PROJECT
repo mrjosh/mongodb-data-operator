@@ -15,6 +15,10 @@ resources:
   kind: MongoDBConfig
   path: github.com/mrjosh/mongodb-data-operator/api/v1
   version: v1
+  webhooks:
+    conversion: true
+    validation: true
+    webhookVersion: v1
 - api:
     crdVersion: v1
     namespaced: true

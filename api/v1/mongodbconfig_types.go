@@ -25,14 +25,11 @@ import (
 
 // MongoDBConfigSpec defines the desired state of MongoDBConfig
 type MongoDBConfigSpec struct {
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Pattern=`(?m)mongodb:\/\/(?:(?:[^:]+):(?:[^@]+)?@)?(?:(?:(?:[^\/]+)|(?:\/.+.sock?),?)+)(?:\/([^\/\."*<>:\|\?]*))?(?:\?(?:(.+=.+)&?)+)*`
 	// MongoURL is a mongodb connection url
-	MongoURL string `json:"mongourl,omitempty"`
+	MongoURL string `json:"mongourl"`
 
-	// +kubebuilder:validation:Required
 	// Collection is a mongodb collection name
-	Collection string `json:"collection,omitempty"`
+	Collection string `json:"collection"`
 }
 
 // MongoDBConfigStatus defines the observed state of MongoDBConfig
@@ -42,7 +39,6 @@ type MongoDBConfigStatus struct {
 }
 
 // +kubebuilder:printcolumn:name="READY",type=string,JSONPath=`.status.ready`,description=`Current state of the MongoDBConfig`
-// +kubebuilder:resource:shortName=mdbc
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Cluster

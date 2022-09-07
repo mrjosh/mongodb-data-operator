@@ -111,6 +111,10 @@ func main() {
 		setupLog.Error(err, "unable to create webhook", "webhook", "MongoDBData")
 		os.Exit(1)
 	}
+	if err = (&mongov1.MongoDBConfig{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "MongoDBConfig")
+		os.Exit(1)
+	}
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

@@ -4,9 +4,9 @@ metadata:
   name: mongodbdata-sample
   namespace: smth
 spec:
-  #db: mongo1
+  db: mongo1
   data:
-    firstname: mohammad
-    lastname: yosefpor
+    firstname: "mamad"
+    lastname: "yosefpor"
     email: myusefpur@gmail.com
-    age: 70
+    age: 1000

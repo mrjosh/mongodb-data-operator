@@ -33,16 +33,23 @@ type MongoDBDataSpec struct {
 }
 
 type MongoDBDataField struct {
+	// +kubebuilder:default="mamad"
+	// +kubebuilder:validation:Optional
 	Firstname string `json:"firstname,omitempty"`
-	Lastname  string `json:"lastname,omitempty"`
-	Email     string `json:"email,omitempty"`
-	Age       uint8  `json:"age,omitempty"`
+
+	// +kubebuilder:validation:Required
+	Lastname string `json:"lastname"`
+
+	Email string `json:"email,omitempty"`
+
+	// +kubebuilder:validation:Maximum=1000
+	Age uint16 `json:"age,omitempty"`
 }
 
 // MongoDBDataStatus defines the observed state of MongoDBData
 type MongoDBDataStatus struct {
-	// +kubebuilder:default:=Pending
-	State      string             `json:"state,omitempty"`
+	// +kubebuilder:default="Pending"
+	State      string             `json:"state"`
 	Conditions []metav1.Condition `json:"conditions"`
 }
 

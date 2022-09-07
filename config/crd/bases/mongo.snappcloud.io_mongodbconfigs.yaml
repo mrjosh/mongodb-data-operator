@@ -45,8 +45,10 @@ spec:
                 type: string
               mongourl:
                 description: MongoURL is a mongodb connection url
-                pattern: (?m)mongodb:\/\/(?:(?:[^:]+):(?:[^@]+)?@)?(?:(?:(?:[^\/]+)|(?:\/.+.sock?),?)+)(?:\/([^\/\."*<>:\|\?]*))?(?:\?(?:(.+=.+)&?)+)*
                 type: string
+            required:
+            - collection
+            - mongourl
             type: object
           status:
             description: MongoDBConfigStatus defines the observed state of MongoDBConfig

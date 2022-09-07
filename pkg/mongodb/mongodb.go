@@ -20,15 +20,15 @@ func NewClientWithContext(ctx context.Context, url string) (*mongo.Client, error
 
 	client, err := mongo.NewClient(opts)
 	if err != nil {
-		return nil, fmt.Errorf("could not create new mongodb client: %v", err)
+		return nil, fmt.Errorf("could not create new mongodb connection: %v", err)
 	}
 
 	if err := client.Connect(mCtx); err != nil {
-		return nil, fmt.Errorf("could not connect to mongodb client: %v", err)
+		return nil, fmt.Errorf("could not connect to mongodb: %v", err)
 	}
 
 	if err := client.Ping(mCtx, readpref.Primary()); err != nil {
-		return nil, fmt.Errorf("could not ping mongodb client: %v", err)
+		return nil, fmt.Errorf("could not ping mongodb: %v", err)
 	}
 
 	return client, nil

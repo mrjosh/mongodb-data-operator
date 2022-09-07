@@ -18,6 +18,7 @@ package v1
 
 import (
 	"errors"
+	"regexp"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -28,7 +29,10 @@ import (
 )
 
 // log is for logging in this package.
-var mongodbdatalog = logf.Log.WithName("mongodbdata-resource")
+var (
+	emailRegexPattern = `^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$`
+	mongodbdatalog    = logf.Log.WithName("mongodbdata-resource")
+)
 
 func (r *MongoDBData) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
@@ -48,6 +52,10 @@ func (r *MongoDBData) ValidateCreate() error {
 	mongodbdatalog.Info("validate create", "name", r.Name)
 
 	if err := r.validateDatabase(); err != nil {
+		return newError(r.Name, err)
+	}
+
+	if err := r.validateSpecs(); err != nil {
 		return newError(r.Name, err)
 	}
 
@@ -74,14 +82,44 @@ func (r *MongoDBData) ValidateUpdate(old runtime.Object) error {
 		return field.Invalid(key, value, "Can not have a change of db field")
 	}
 
+	if err := r.validateSpecs(); err != nil {
+		return newError(r.Name, err)
+	}
+
 	return nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
 func (r *MongoDBData) ValidateDelete() error {
 	mongodbdatalog.Info("validate delete", "name", r.Name)
+	return nil
+}
 
-	// TODO(user): fill in your validation logic upon object deletion.
+func (r *MongoDBData) validateSpecs() *field.Error {
+
+	// Validate spec.data.lastname
+	{
+		key := field.NewPath("spec").Child("data").Child("lastname")
+		value := r.Spec.Data.Lastname
+
+		if value == "" {
+			return field.Invalid(key, value, "lastname cannot be empty")
+		}
+	}
+
+	// Validate spec.data.email
+	{
+
+		key := field.NewPath("spec").Child("data").Child("email")
+		value := r.Spec.Data.Email
+
+		if value != "" {
+			if !r.isValidEmail(value) {
+				return field.Invalid(key, value, "email is not valid")
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -90,7 +128,7 @@ func (r *MongoDBData) validateDatabase() *field.Error {
 	value := r.Spec.DB
 
 	if value == "" {
-		return field.Invalid(key, value, "db must be configured")
+		return field.Invalid(key, value, "db cannot be empty")
 	}
 
 	return nil
@@ -98,4 +136,9 @@ func (r *MongoDBData) validateDatabase() *field.Error {
 
 func newError(name string, err *field.Error) error {
 	return apierrors.NewInvalid(GroupKind, name, field.ErrorList{err})
+}
+
+func (r *MongoDBData) isValidEmail(email string) bool {
+	re := regexp.MustCompile(emailRegexPattern)
+	return len(re.FindStringIndex(email)) > 0
 }

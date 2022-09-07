@@ -105,6 +105,9 @@ var _ = BeforeSuite(func() {
 	err = (&MongoDBData{}).SetupWebhookWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 
+	err = (&MongoDBConfig{}).SetupWebhookWithManager(mgr)
+	Expect(err).NotTo(HaveOccurred())
+
 	//+kubebuilder:scaffold:webhook
 
 	go func() {

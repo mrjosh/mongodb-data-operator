@@ -9,7 +9,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (r *MongoDBConfigReconciler) setEventStatusCondition(ctx context.Context, adapter *mongov1.MongoDBConfig, reason mongov1.MongoDBConfigConditionType, status metav1.ConditionStatus, message string) error {
+func (r *MongoDBConfigReconciler) setEventStatusCondition(
+	ctx context.Context,
+	adapter *mongov1.MongoDBConfig,
+	reason mongov1.MongoDBConfigConditionType,
+	status metav1.ConditionStatus,
+	message string,
+) error {
 
 	eventType := corev1.EventTypeWarning
 	if status == metav1.ConditionTrue {
@@ -24,6 +30,38 @@ func (r *MongoDBConfigReconciler) setEventStatusCondition(ctx context.Context, a
 	)
 
 	adapter.Status.Ready = string(status)
+	apimeta.SetStatusCondition(&adapter.Status.Conditions, metav1.Condition{
+		Type:               string(reason),
+		Status:             status,
+		Reason:             string(reason),
+		Message:            message,
+		ObservedGeneration: adapter.Generation,
+	})
+
+	return r.Status().Update(ctx, adapter)
+}
+
+func (r *MongoDBDataReconciler) setEventStatusCondition(
+	ctx context.Context,
+	adapter *mongov1.MongoDBData,
+	reason mongov1.MongoDBDataConditionType,
+	status metav1.ConditionStatus,
+	message string,
+) error {
+
+	eventType := corev1.EventTypeWarning
+	if status == metav1.ConditionTrue {
+		eventType = corev1.EventTypeNormal
+	}
+
+	r.Recorder.Event(
+		adapter,
+		eventType,
+		string(status),
+		message,
+	)
+
+	adapter.Status.State = string(reason)
 	apimeta.SetStatusCondition(&adapter.Status.Conditions, metav1.Condition{
 		Type:               string(reason),
 		Status:             status,

@@ -25,10 +25,10 @@ import (
 
 // MongoDBDataSpec defines the desired state of MongoDBData
 type MongoDBDataSpec struct {
-	// DB is a MongoDBConfig CRD name
+	// DB is a MongoDBConfig name
 	DB string `json:"db,omitempty"`
 
-	// Data is a MongodDB collection data
+	// Data is a MongodDB insertation data to a collection
 	Data MongoDBDataField `json:"data,omitempty"`
 }
 
@@ -41,7 +41,9 @@ type MongoDBDataField struct {
 
 // MongoDBDataStatus defines the observed state of MongoDBData
 type MongoDBDataStatus struct {
-	State string `json:"state,omitempty"`
+	// +kubebuilder:default:=Pending
+	State      string             `json:"state,omitempty"`
+	Conditions []metav1.Condition `json:"conditions"`
 }
 
 // +kubebuilder:object:root=true
@@ -71,3 +73,10 @@ type MongoDBDataList struct {
 func init() {
 	SchemeBuilder.Register(&MongoDBData{}, &MongoDBDataList{})
 }
+
+type MongoDBDataConditionType string
+
+const (
+	MongoDBDataConditionPending  MongoDBDataConditionType = "Pending"
+	MongoDBDataConditionInserted MongoDBDataConditionType = "Inserted"
+)

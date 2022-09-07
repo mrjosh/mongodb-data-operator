@@ -1,7 +1,7 @@
 apiVersion: mongo.snappcloud.io/v1
 kind: MongoDBConfig
 metadata:
-  name: mongodbconfig-sample
+  name: mongo1
 spec:
   mongourl: "mongodb://snappcloud:super-secure-password@mongodb-data-operator-mongodb-1:27017/?authSource=admin"
-  collection: ""
+  collection: "test-collection"

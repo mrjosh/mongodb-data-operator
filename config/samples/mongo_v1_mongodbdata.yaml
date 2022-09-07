@@ -2,5 +2,11 @@ apiVersion: mongo.snappcloud.io/v1
 kind: MongoDBData
 metadata:
   name: mongodbdata-sample
+  namespace: smth
 spec:
-  # TODO(user): Add fields here
+  db: mongo1
+  data:
+    firstname: mohammad
+    lastname: yosefpor
+    email: myusefpur@gmail.com
+    age: 70

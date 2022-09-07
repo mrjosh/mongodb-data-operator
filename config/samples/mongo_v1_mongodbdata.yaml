@@ -4,7 +4,7 @@ metadata:
   name: mongodbdata-sample
   namespace: smth
 spec:
-  db: mongo1
+  #db: mongo1
   data:
     firstname: mohammad
     lastname: yosefpor

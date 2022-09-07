@@ -25,6 +25,8 @@ import (
 )
 
 var (
+	GroupKind = schema.GroupKind{Group: "mongo.snappcloud.io", Kind: "mongodb"}
+
 	// GroupVersion is group version used to register these objects
 	GroupVersion = schema.GroupVersion{Group: "mongo.snappcloud.io", Version: "v1"}
 

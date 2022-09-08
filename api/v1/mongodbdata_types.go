@@ -49,8 +49,11 @@ type MongoDBDataField struct {
 // MongoDBDataStatus defines the observed state of MongoDBData
 type MongoDBDataStatus struct {
 	// +kubebuilder:default="Pending"
-	State      string             `json:"state"`
-	Conditions []metav1.Condition `json:"conditions"`
+	State string `json:"state"`
+
+	// mongodb record ObjectID
+	ObjectID   string             `json:"object_id,omitempty"`
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 // +kubebuilder:object:root=true
@@ -86,4 +89,6 @@ type MongoDBDataConditionType string
 const (
 	MongoDBDataConditionPending  MongoDBDataConditionType = "Pending"
 	MongoDBDataConditionInserted MongoDBDataConditionType = "Inserted"
+	MongoDBDataConditionDeleting MongoDBDataConditionType = "Deleting"
+	MongoDBDataConditionFailed   MongoDBDataConditionType = "Failed"
 )

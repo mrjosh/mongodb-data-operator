@@ -19,19 +19,28 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
-	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/go-logr/logr"
 	mongov1 "github.com/mrjosh/mongodb-data-operator/api/v1"
+	"github.com/mrjosh/mongodb-data-operator/pkg/mongodb"
 	"github.com/pingcap/errors"
+)
+
+var (
+	finalizerName = "mongo.snappcloud.io/finalizer"
 )
 
 // MongoDBDataReconciler reconciles a MongoDBData object
@@ -59,7 +68,6 @@ type MongoDBDataReconciler struct {
 func (r *MongoDBDataReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 
 	log := r.Log.WithValues("mongodb-data", req.NamespacedName)
-
 	log.Info("Reconciling MongoDBData")
 
 	mongoData := &mongov1.MongoDBData{}
@@ -67,23 +75,19 @@ func (r *MongoDBDataReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		if errors.IsNotFound(err) {
 			// don't requeue on deletions, which yield a non-found object
 			log.Info("ignoring", "reason", "not found", "err", err)
-			return doNotRequeue()
+		}
+		return requeue(client.IgnoreNotFound(err))
+	}
+
+	if mongoData.Status.State == "" {
+
+		// The object is being deleted
+		mongoData.Status.State = string(mongov1.MongoDBDataConditionPending)
+		if err := r.Status().Update(ctx, mongoData); err != nil {
+			log.Error(err, "unable to update target's status object")
+			return requeue(err)
 		}
 
-		log.Error(err, "failed to get the mongo-data")
-		return requeue(err)
-	}
-
-	metaObj, err := meta.Accessor(mongoData)
-	if err != nil {
-		log.Error(err, "unable to get metadata for object")
-		return requeue(err)
-	}
-
-	// ignore resources that are being deleted
-	if !metaObj.GetDeletionTimestamp().IsZero() {
-		log.Info("ignoring", "reason", "object has a non-zero deletion timestamp")
-		return doNotRequeue()
 	}
 
 	// Check if the MongoDBConfig exists
@@ -93,16 +97,7 @@ func (r *MongoDBDataReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		if errors.IsNotFound(err) {
 
 			message := fmt.Sprintf("MongoDBConfig with name %s doesn't exists", mongoData.Spec.DB)
-
-			err := r.setEventStatusCondition(
-				ctx,
-				mongoData,
-				mongov1.MongoDBDataConditionPending,
-				metav1.ConditionFalse,
-				message,
-			)
-
-			if err != nil {
+			if err := r.setEventStatusPending(ctx, mongoData, message); err != nil {
 				log.Error(err, "unable to update target's status object")
 				return requeue(err)
 			}
@@ -115,19 +110,97 @@ func (r *MongoDBDataReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return requeue(err)
 	}
 
-	// Insert data to MongoDBConfig collection
+	// create a new mongodb client
+	mongoClient, err := mongodb.NewClient(mongoCfg.Spec.MongoURL)
+	if err != nil {
 
-	err = r.setEventStatusCondition(
-		ctx,
-		mongoData,
-		mongov1.MongoDBDataConditionInserted,
-		metav1.ConditionTrue,
-		fmt.Sprintf("MongoDBData successfully Inserted into %s collection", mongoCfg.Spec.Collection),
+		if err := r.setEventStatusPending(ctx, mongoData, err.Error()); err != nil {
+			log.Error(err, "unable to update target's status object")
+			return requeue(err)
+		}
+
+		return requeueWithDelay(30 * time.Second)
+	}
+
+	var (
+		// using resource namespace as database name
+		db         = mongoClient.Database(req.Namespace)
+		collection = db.Collection(mongoCfg.Spec.Collection)
 	)
 
+	// examine DeletionTimestamp to determine if object is under deletion
+	if mongoData.ObjectMeta.DeletionTimestamp.IsZero() {
+
+		// The object is not being deleted, so if it does not have our finalizer,
+		// then lets add the finalizer and update the object. This is equivalent
+		// registering our finalizer.
+		if !controllerutil.ContainsFinalizer(mongoData, finalizerName) {
+
+			if controllerutil.AddFinalizer(mongoData, finalizerName) {
+
+				if err := r.Update(ctx, mongoData); err != nil {
+					log.Error(err, "unable to update target")
+					return requeue(err)
+				}
+			}
+
+		}
+
+	} else {
+
+		if controllerutil.ContainsFinalizer(mongoData, finalizerName) {
+
+			// our finalizer is present, so lets handle any external dependency
+			if err := r.deleteDocument(ctx, collection, mongoData); err != nil {
+				// if fail to delete the external dependency here, return with error
+				// so that it can be retried
+				log.Error(err, "unable to remove object from mongodb")
+				return requeue(err)
+			}
+
+			// remove our finalizer from the list and update it.
+			if controllerutil.RemoveFinalizer(mongoData, finalizerName) {
+
+				mongoData.Status.State = string(mongov1.MongoDBDataConditionDeleting)
+				if err := r.Update(ctx, mongoData); err != nil {
+					log.Error(err, "unable to update target")
+					return requeue(err)
+				}
+			}
+
+		}
+
+		// Stop reconciliation as the item is being deleted
+		return doNotRequeue()
+	}
+
+	// marshal the current MongoDBData object into bson.M for further mongodb operations
+	data, err := bson.Marshal(mongoData.Spec.Data)
 	if err != nil {
-		log.Error(err, "unable to update target's status object")
-		return requeue(err)
+
+		if err := r.setEventStatusPending(ctx, mongoData, err.Error()); err != nil {
+			log.Error(err, "unable to update target's status object")
+			return requeue(err)
+		}
+
+		return requeueWithDelay(30 * time.Second)
+	}
+
+	// check if mongodbData state is Inserted and there is a record on database
+	// then update the record
+	if mongoData.Status.State == string(mongov1.MongoDBDataConditionInserted) {
+
+		// if document exists on database, MongoDBData.Status.ObjectID should not be empty
+		// then we should update the document
+		if mongoData.Status.ObjectID != "" {
+			return r.findAndUpdateDocumentIfNeeded(ctx, log, collection, mongoData, mongoCfg, data)
+		}
+	}
+
+	if mongoData.Status.State == string(mongov1.MongoDBDataConditionPending) {
+
+		// check if mongodbData state is not Inserted, insert the document to mongodb collection
+		return r.insertDocument(ctx, log, collection, mongoData, mongoCfg, data)
 	}
 
 	return doNotRequeue()
@@ -138,4 +211,111 @@ func (r *MongoDBDataReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&mongov1.MongoDBData{}).
 		Complete(r)
+}
+
+// updateDocument will update the current MongoDBData document from database
+func (r *MongoDBDataReconciler) findAndUpdateDocumentIfNeeded(
+	ctx context.Context,
+	log logr.Logger,
+	collection *mongo.Collection,
+	mongoData *mongov1.MongoDBData,
+	mongoCfg *mongov1.MongoDBConfig,
+	document []byte,
+) (ctrl.Result, error) {
+
+	updateID, err := primitive.ObjectIDFromHex(mongoData.Status.ObjectID)
+	if err != nil {
+		log.Error(err, "unable to decode hex ObjectID to primitive.ObjectID")
+		return requeue(err)
+	}
+
+	curser := collection.FindOne(ctx, bson.M{"_id": updateID})
+
+	// decode find spec.Data into bson.M for comparison
+	var find bson.M
+	if err := curser.Decode(&find); err != nil {
+		log.Error(err, "could not unmarshal mongodb find document into bson.M")
+		return requeue(err)
+	}
+
+	// decode resource spec.Data into bson.M for comparison
+	var specData bson.M
+	if err := bson.Unmarshal(document, &specData); err != nil {
+		log.Error(err, "could not unmarshal spec.data bson bytes into bson.M")
+		return requeue(err)
+	}
+
+	// if current object is not equel with database document
+	// we should update the document on db
+	if !reflect.DeepEqual(find, specData) {
+
+		result, err := collection.UpdateByID(ctx, updateID, bson.M{"$set": specData})
+		if err != nil {
+
+			if err := r.setEventStatusFailed(ctx, mongoData, err.Error()); err != nil {
+				log.Error(err, "unable to update target's status object")
+				return requeue(err)
+			}
+
+			return requeueWithDelay(30 * time.Second)
+		}
+
+		if result.ModifiedCount == 1 {
+
+			msg := "Document updated successfully"
+			if err := r.setEventStatusInserted(ctx, mongoData, msg); err != nil {
+
+				log.Error(err, "unable to update target's status object")
+				return requeue(err)
+			}
+		}
+
+	}
+
+	return doNotRequeue()
+}
+
+// insertDocument will insert current MongoDBData document into database
+func (r *MongoDBDataReconciler) insertDocument(
+	ctx context.Context,
+	log logr.Logger,
+	collection *mongo.Collection,
+	mongoData *mongov1.MongoDBData,
+	mongoCfg *mongov1.MongoDBConfig,
+	document []byte,
+) (ctrl.Result, error) {
+
+	result, err := collection.InsertOne(ctx, document)
+	if err != nil {
+
+		if err := r.setEventStatusFailed(ctx, mongoData, err.Error()); err != nil {
+			log.Error(err, "unable to update target's status object")
+			return requeue(err)
+		}
+
+		return requeueWithDelay(30 * time.Second)
+	}
+
+	if result.InsertedID != nil {
+
+		mongoData.Status.ObjectID = result.InsertedID.(primitive.ObjectID).Hex()
+		msg := fmt.Sprintf("MongoDBData successfully Inserted into %s collection", mongoCfg.Spec.Collection)
+		if err := r.setEventStatusInserted(ctx, mongoData, msg); err != nil {
+
+			log.Error(err, "unable to update target's status object")
+			return requeue(err)
+		}
+	}
+
+	return doNotRequeue()
+}
+
+// deleteDocument will delete the current MongoDBData document from database
+func (r *MongoDBDataReconciler) deleteDocument(ctx context.Context, coll *mongo.Collection, adapter *mongov1.MongoDBData) (err error) {
+	objectID, err := primitive.ObjectIDFromHex(adapter.Status.ObjectID)
+	if err != nil {
+		return err
+	}
+	_, err = coll.DeleteOne(ctx, bson.M{"_id": objectID})
+	return client.IgnoreNotFound(err)
 }

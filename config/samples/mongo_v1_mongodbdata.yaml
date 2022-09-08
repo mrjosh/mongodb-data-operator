@@ -6,7 +6,7 @@ metadata:
 spec:
   db: mongo1
   data:
-    firstname: "mamad"
-    lastname: "yosefpor"
-    email: myusefpur@gmail.com
-    age: 1000
+    firstname: "Alirezaj"
+    lastname: Josheghani
+    email: "josheghani.dev@gmail.com"
+    age: 27

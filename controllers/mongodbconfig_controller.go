@@ -20,7 +20,6 @@ import (
 	"context"
 	"time"
 
-	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -31,7 +30,6 @@ import (
 	mongov1 "github.com/mrjosh/mongodb-data-operator/api/v1"
 	"github.com/mrjosh/mongodb-data-operator/pkg/mongodb"
 	"github.com/pingcap/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // MongoDBConfigReconciler reconciles a MongoDBConfig object
@@ -59,46 +57,25 @@ type MongoDBConfigReconciler struct {
 func (r *MongoDBConfigReconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 
 	log := r.Log.WithValues("mongodb-config", req.NamespacedName)
-
 	log.Info("Reconciling MongoDBConfig")
 
 	mongoCfg := &mongov1.MongoDBConfig{}
 	if err := r.Get(ctx, req.NamespacedName, mongoCfg); err != nil {
+
 		if errors.IsNotFound(err) {
 			// don't requeue on deletions, which yield a non-found object
 			log.Info("ignoring", "reason", "not found", "err", err)
-			return doNotRequeue()
 		}
 
 		log.Error(err, "failed to get the mongo-config")
-		return requeue(err)
-	}
-
-	metaObj, err := meta.Accessor(mongoCfg)
-	if err != nil {
-		log.Error(err, "unable to get metadata for object")
-		return reconcile.Result{}, err
-	}
-
-	// ignore resources that are being deleted
-	if !metaObj.GetDeletionTimestamp().IsZero() {
-		log.Info("ignoring", "reason", "object has a non-zero deletion timestamp")
-		return reconcile.Result{}, nil
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	// try to connect to the mongodb url
 	// create a new mongodb client for connection validation
 	if _, err := mongodb.NewClientWithContext(ctx, mongoCfg.Spec.MongoURL); err != nil {
 
-		err = r.setEventStatusCondition(
-			ctx,
-			mongoCfg,
-			mongov1.ConnectError,
-			metav1.ConditionFalse,
-			err.Error(),
-		)
-
-		if err != nil {
+		if err := r.setEventStatusError(ctx, mongoCfg, err.Error()); err != nil {
 			log.Error(err, "unable to update target's status object")
 			return requeue(err)
 		}
@@ -106,17 +83,11 @@ func (r *MongoDBConfigReconciler) Reconcile(ctx context.Context, req reconcile.R
 		return requeueWithDelay(30 * time.Second)
 	}
 
-	err = r.setEventStatusCondition(
-		ctx,
-		mongoCfg,
-		mongov1.Ready,
-		metav1.ConditionTrue,
-		"Successfully connected to MongoDB database",
-	)
-
-	if err != nil {
-		log.Error(err, "unable to update target's status object")
-		return requeue(err)
+	if mongoCfg.Status.Ready != string(mongov1.Ready) {
+		if err := r.setEventStatusReady(ctx, mongoCfg, "Successfully connected to MongoDB database"); err != nil {
+			log.Error(err, "unable to update target's status object")
+			return requeue(err)
+		}
 	}
 
 	return doNotRequeue()

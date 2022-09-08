@@ -41,6 +41,56 @@ func (r *MongoDBConfigReconciler) setEventStatusCondition(
 	return r.Status().Update(ctx, adapter)
 }
 
+func (r *MongoDBConfigReconciler) setEventStatusReady(ctx context.Context, adapter *mongov1.MongoDBConfig, msg string) error {
+	return r.setEventStatusCondition(
+		ctx,
+		adapter,
+		mongov1.Ready,
+		metav1.ConditionTrue,
+		msg,
+	)
+}
+
+func (r *MongoDBConfigReconciler) setEventStatusError(ctx context.Context, adapter *mongov1.MongoDBConfig, msg string) error {
+	return r.setEventStatusCondition(
+		ctx,
+		adapter,
+		mongov1.ConnectError,
+		metav1.ConditionFalse,
+		msg,
+	)
+}
+
+func (r *MongoDBDataReconciler) setEventStatusPending(ctx context.Context, adapter *mongov1.MongoDBData, msg string) error {
+	return r.setEventStatusCondition(
+		ctx,
+		adapter,
+		mongov1.MongoDBDataConditionPending,
+		metav1.ConditionFalse,
+		msg,
+	)
+}
+
+func (r *MongoDBDataReconciler) setEventStatusInserted(ctx context.Context, adapter *mongov1.MongoDBData, msg string) error {
+	return r.setEventStatusCondition(
+		ctx,
+		adapter,
+		mongov1.MongoDBDataConditionInserted,
+		metav1.ConditionTrue,
+		msg,
+	)
+}
+
+func (r *MongoDBDataReconciler) setEventStatusFailed(ctx context.Context, adapter *mongov1.MongoDBData, msg string) error {
+	return r.setEventStatusCondition(
+		ctx,
+		adapter,
+		mongov1.MongoDBDataConditionFailed,
+		metav1.ConditionFalse,
+		msg,
+	)
+}
+
 func (r *MongoDBDataReconciler) setEventStatusCondition(
 	ctx context.Context,
 	adapter *mongov1.MongoDBData,

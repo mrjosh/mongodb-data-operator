@@ -1,80 +1,42 @@
-# mongodb-data-operator
-// TODO(user): Add simple overview of use/purpose
+# MongoDB Data Operator
+The MongoDB Data Operator aims to manage the full lifecycle of a mongodb document in you Kubernetes container platforms.
 
-## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
+## Overview
+The MongoDB Data Operator provides Kubernetes management of MongoDB data store and related mongodb queries.
+The purpose of this project is to simplify the mongodb queries for Kubernetes clusters.
+A core feature of the MongoDB Data Operator is to create, update, delete mongodb documents
+
+The MongoDB Data operator includes the following features:
+
+* **Kubernetes Custom Resources**: Use Kubernetes custom resources to create, update, delete datas in mongodb collections
+
+## CustomResourceDefinitions
+The Operator acts on the following [custom resource definitions (CRDs)](https://kubernetes.io/docs/tasks/access-kubernetes-api/extend-api-custom-resource-definitions/):
+
+* **`MongoDBConfig`**, which defines a desired MongoDB database connection and collection
+
+* **`MongoDBData`**, which defines a desired MongoDB document
 
 ## Getting Started
 You’ll need a Kubernetes cluster to run against. You can use [KIND](https://sigs.k8s.io/kind) to get a local cluster for testing, or run against a remote cluster.
-**Note:** Your controller will automatically use the current context in your kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
+simply, run `make kind` to have a kind cluster inside docker.
 
-### Running on the cluster
-1. Install Instances of Custom Resources:
+### Prometheus Installation
 
+You may also need Prometheus installed on your cluster for monitoring
+simply use the below command for prometheus installation on your cluster
 ```sh
-kubectl apply -f config/samples/
-```
-
-2. Build and push your image to the location specified by `IMG`:
-	
-```sh
-make docker-build docker-push IMG=<some-registry>/mongodb-data-operator:tag
-```
-	
-3. Deploy the controller to the cluster with the image specified by `IMG`:
-
-```sh
-make deploy IMG=<some-registry>/mongodb-data-operator:tag
-```
-
-### Uninstall CRDs
-To delete the CRDs from the cluster:
-
-```sh
-make uninstall
-```
-
-### Undeploy controller
-UnDeploy the controller to the cluster:
-
-```sh
-make undeploy
+kubectl apply -f https://raw.githubusercontent.com/coreos/prometheus-operator/release-0.33/bundle.yaml
 ```
 
 ## Contributing
-// TODO(user): Add detailed information on how you would like others to contribute to this project
+Thank you for considering contributing to MongoDB data operator project!
 
 ### How it works
 This project aims to follow the Kubernetes [Operator pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)
 
 It uses [Controllers](https://kubernetes.io/docs/concepts/architecture/controller/) 
 which provides a reconcile function responsible for synchronizing resources untile the desired state is reached on the cluster 
-
-### Test It Out
-1. Install the CRDs into the cluster:
-
-```sh
-make install
-```
-
-2. Run your controller (this will run in the foreground, so switch to a new terminal if you want to leave it running):
-
-```sh
-make run
-```
-
-**NOTE:** You can also run this in one step by running: `make install run`
-
-### Modifying the API definitions
-If you are editing the API definitions, generate the manifests such as CRs or CRDs using:
-
-```sh
-make manifests
-```
-
-**NOTE:** Run `make --help` for more information on all potential `make` targets
-
-More information can be found via the [Kubebuilder Documentation](https://book.kubebuilder.io/introduction.html)
 
 ## License
 

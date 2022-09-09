@@ -317,6 +317,7 @@ spec:
       operations:
       - CREATE
       - UPDATE
+      - DELETE
       resources:
       - mongodbconfigs
     sideEffects: None

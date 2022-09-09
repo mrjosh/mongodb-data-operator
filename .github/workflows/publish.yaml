@@ -45,4 +45,6 @@ jobs:
           context: .
           push: true
           platforms: linux/amd64,linux/arm64,linux/arm/v7
-          tags: mrjosh/mongodb-data-operator:$GITHUB_REF_NAME
+          tags: mrjosh/mongodb-data-operator:${{ env.BRANCH }}
+          build-args: |
+            BRANCH=$GITHUB_REF_NAME

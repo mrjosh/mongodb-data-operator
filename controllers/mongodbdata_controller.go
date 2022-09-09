@@ -27,7 +27,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
+	// nolint
+	k8sTypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -86,7 +87,7 @@ func (r *MongoDBDataReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	log.Info("Reconciling MongoDBData")
 
 	mongoData := &mongov1.MongoDBData{}
-	if err := r.Get(ctx, req.NamespacedName, mongoData); err != nil {
+	if err := r.Client.Get(ctx, req.NamespacedName, mongoData); err != nil {
 		if errors.IsNotFound(err) {
 			// don't requeue on deletions, which yield a non-found object
 			log.Info("ignoring", "reason", "not found", "err", err)
@@ -103,7 +104,7 @@ func (r *MongoDBDataReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	// Check if the MongoDBConfig exists
 	mongoCfg := &mongov1.MongoDBConfig{}
-	if err := r.Get(ctx, types.NamespacedName{Name: mongoData.Spec.DB}, mongoCfg); err != nil {
+	if err := r.Client.Get(ctx, k8sTypes.NamespacedName{Name: mongoData.Spec.DB}, mongoCfg); err != nil {
 
 		if errors.IsNotFound(err) {
 
@@ -125,7 +126,7 @@ func (r *MongoDBDataReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 		// The object is being deleted
 		mongoData.Status.State = string(mongov1.MongoDBDataConditionPending)
-		if err := r.Status().Update(ctx, mongoData); err != nil {
+		if err := r.Client.Status().Update(ctx, mongoData); err != nil {
 			log.Error(err, "unable to update target's status object")
 			return requeue(err)
 		}
@@ -161,7 +162,7 @@ func (r *MongoDBDataReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 			if controllerutil.AddFinalizer(mongoData, mongoDBDataFinalizerName) {
 
-				if err := r.Update(ctx, mongoData); err != nil {
+				if err := r.Client.Update(ctx, mongoData); err != nil {
 					log.Error(err, "unable to update target")
 					return requeue(err)
 				}
@@ -185,7 +186,7 @@ func (r *MongoDBDataReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			if controllerutil.RemoveFinalizer(mongoData, mongoDBDataFinalizerName) {
 
 				mongoData.Status.State = string(mongov1.MongoDBDataConditionDeleting)
-				if err := r.Update(ctx, mongoData); err != nil {
+				if err := r.Client.Update(ctx, mongoData); err != nil {
 					log.Error(err, "unable to update target")
 					return requeue(err)
 				}

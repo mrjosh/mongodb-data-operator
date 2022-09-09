@@ -63,6 +63,30 @@ endif
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
+LINTER=$(GOBIN)/golangci-lint
+LINTERCMD=run --no-config -v \
+	--print-linter-name \
+	--skip-files ".*.gen.go" \
+	--skip-files ".*_test.go" \
+	--sort-results \
+	--disable-all \
+	--enable=structcheck \
+	--enable=deadcode \
+	--enable=gocyclo \
+	--enable=ineffassign \
+	--enable=revive \
+	--enable=goimports \
+	--enable=errcheck \
+	--enable=varcheck \
+	--enable=goconst \
+	--enable=megacheck \
+	--enable=misspell \
+	--enable=unused \
+	--enable=typecheck \
+	--enable=staticcheck \
+	--enable=govet \
+	--enable=gosimple
+
 .PHONY: all
 all: build
 
@@ -249,3 +273,11 @@ kind: ## Create a new kind cluster
 .PHONY: mongodb
 mongodb: ## Bring up a mongodb docker container
 	@docker compose -f mongodb-docker-compose.yaml up -d --force-recreate
+
+lint: ## runs golang-ci lint against the project
+	@$(LINTER) $(LINTERCMD) --deadline 10m ./...
+
+.PHONY: install-metalinter
+install-metalinter: ### Installs golangci-lint
+	@go get -v github.com/golangci/golangci-lint/cmd/golangci-lint@v1.41.1
+	@go install -v github.com/golangci/golangci-lint/cmd/golangci-lint@v1.41.1

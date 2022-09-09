@@ -38,7 +38,7 @@ func (r *MongoDBConfigReconciler) setEventStatusCondition(
 		ObservedGeneration: adapter.Generation,
 	})
 
-	return r.Status().Update(ctx, adapter)
+	return r.Client.Status().Update(ctx, adapter)
 }
 
 func (r *MongoDBConfigReconciler) setEventStatusReady(ctx context.Context, adapter *mongov1.MongoDBConfig, msg string) error {
@@ -115,5 +115,5 @@ func (r *MongoDBDataReconciler) setEventStatusCondition(
 		ObservedGeneration: adapter.Generation,
 	})
 
-	return r.Status().Update(ctx, adapter)
+	return r.Client.Status().Update(ctx, adapter)
 }

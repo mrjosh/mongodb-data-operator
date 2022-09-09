@@ -47,10 +47,10 @@ var _ webhook.Validator = &MongoDBConfig{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *MongoDBConfig) ValidateCreate() error {
-	mongodbconfiglog.Info("validate create", "name", r.Name)
+	mongodbconfiglog.Info("validate create", "name", r.ObjectMeta.Name)
 
 	if err := r.validateSpecs(); err != nil {
-		return newError(r.Name, err)
+		return newError(r.ObjectMeta.Name, err)
 	}
 
 	return nil
@@ -58,10 +58,10 @@ func (r *MongoDBConfig) ValidateCreate() error {
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (r *MongoDBConfig) ValidateUpdate(old runtime.Object) error {
-	mongodbconfiglog.Info("validate update", "name", r.Name)
+	mongodbconfiglog.Info("validate update", "name", r.ObjectMeta.Name)
 
 	if err := r.validateSpecs(); err != nil {
-		return newError(r.Name, err)
+		return newError(r.ObjectMeta.Name, err)
 	}
 
 	return nil
@@ -69,7 +69,7 @@ func (r *MongoDBConfig) ValidateUpdate(old runtime.Object) error {
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
 func (r *MongoDBConfig) ValidateDelete() error {
-	mongodbconfiglog.Info("validate delete", "name", r.Name)
+	mongodbconfiglog.Info("validate delete", "name", r.ObjectMeta.Name)
 	return nil
 }
 

@@ -49,14 +49,14 @@ var _ webhook.Validator = &MongoDBData{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *MongoDBData) ValidateCreate() error {
-	mongodbdatalog.Info("validate create", "name", r.Name)
+	mongodbdatalog.Info("validate create", "name", r.ObjectMeta.Name)
 
 	if err := r.validateDatabase(); err != nil {
-		return newError(r.Name, err)
+		return newError(r.ObjectMeta.Name, err)
 	}
 
 	if err := r.validateSpecs(); err != nil {
-		return newError(r.Name, err)
+		return newError(r.ObjectMeta.Name, err)
 	}
 
 	return nil
@@ -64,13 +64,13 @@ func (r *MongoDBData) ValidateCreate() error {
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (r *MongoDBData) ValidateUpdate(old runtime.Object) error {
-	mongodbdatalog.Info("validate update", "name", r.Name)
+	mongodbdatalog.Info("validate update", "name", r.ObjectMeta.Name)
 
 	key := field.NewPath("spec").Child("db")
 	value := r.Spec.DB
 
 	if err := r.validateDatabase(); err != nil {
-		return newError(r.Name, err)
+		return newError(r.ObjectMeta.Name, err)
 	}
 
 	oldmdbd, ok := old.(*MongoDBData)
@@ -83,7 +83,7 @@ func (r *MongoDBData) ValidateUpdate(old runtime.Object) error {
 	}
 
 	if err := r.validateSpecs(); err != nil {
-		return newError(r.Name, err)
+		return newError(r.ObjectMeta.Name, err)
 	}
 
 	return nil
@@ -91,7 +91,7 @@ func (r *MongoDBData) ValidateUpdate(old runtime.Object) error {
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
 func (r *MongoDBData) ValidateDelete() error {
-	mongodbdatalog.Info("validate delete", "name", r.Name)
+	mongodbdatalog.Info("validate delete", "name", r.ObjectMeta.Name)
 	return nil
 }
 

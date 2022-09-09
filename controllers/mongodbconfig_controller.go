@@ -65,7 +65,7 @@ func (r *MongoDBConfigReconciler) Reconcile(ctx context.Context, req reconcile.R
 	log.Info("Reconciling MongoDBConfig")
 
 	mongoCfg := &mongov1.MongoDBConfig{}
-	if err := r.Get(ctx, req.NamespacedName, mongoCfg); err != nil {
+	if err := r.Client.Get(ctx, req.NamespacedName, mongoCfg); err != nil {
 		if errors.IsNotFound(err) {
 			// don't requeue on deletions, which yield a non-found object
 			log.Info("ignoring", "reason", "not found", "err", err)
@@ -84,7 +84,7 @@ func (r *MongoDBConfigReconciler) Reconcile(ctx context.Context, req reconcile.R
 
 			if controllerutil.AddFinalizer(mongoCfg, mongoDBConfigFinalizerName) {
 
-				if err := r.Update(ctx, mongoCfg); err != nil {
+				if err := r.Client.Update(ctx, mongoCfg); err != nil {
 					log.Error(err, "unable to update target")
 					return requeue(err)
 				}
@@ -103,7 +103,7 @@ func (r *MongoDBConfigReconciler) Reconcile(ctx context.Context, req reconcile.R
 			if controllerutil.RemoveFinalizer(mongoCfg, mongoDBConfigFinalizerName) {
 
 				mongoCfg.Status.Ready = string(mongov1.Terminating)
-				if err := r.Update(ctx, mongoCfg); err != nil {
+				if err := r.Client.Update(ctx, mongoCfg); err != nil {
 					log.Error(err, "unable to update target")
 					return requeue(err)
 				}

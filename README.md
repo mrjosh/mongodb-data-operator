@@ -25,7 +25,7 @@ simply, run `make kind` to have a kind cluster inside your docker.
 
 ### Prometheus Installation
 
-You may also need Prometheus installed on your cluster for monitoring
+You may also need Prometheus installed on your cluster for monitoring,
 simply use the below command for prometheus installation on your cluster
 ```sh
 kubectl apply -f https://raw.githubusercontent.com/coreos/prometheus-operator/release-0.33/bundle.yaml

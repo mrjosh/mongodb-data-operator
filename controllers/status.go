@@ -104,12 +104,7 @@ func (r *MongoDBDataReconciler) setEventStatusCondition(
 		eventType = corev1.EventTypeNormal
 	}
 
-	r.Recorder.Event(
-		adapter,
-		eventType,
-		string(status),
-		message,
-	)
+	r.Recorder.Event(adapter, eventType, string(status), message)
 
 	adapter.Status.State = string(reason)
 	apimeta.SetStatusCondition(&adapter.Status.Conditions, metav1.Condition{

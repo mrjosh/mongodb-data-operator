@@ -71,4 +71,5 @@ const (
 	Ready               MongoDBConfigConditionType = "Ready"
 	NoMongoURLSpecified MongoDBConfigConditionType = "NoMongoURLSpecified"
 	ConnectError        MongoDBConfigConditionType = "ConnectError"
+	Terminating         MongoDBConfigConditionType = "Terminating"
 )

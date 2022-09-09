@@ -38,6 +38,9 @@ spec:
         - /manager
         args:
         - --leader-elect
+        ports:
+        - containerPort: 8080
+          name: metrics
         image: localhost:5001/mongodb-data-operator:latest
         name: manager
         securityContext:

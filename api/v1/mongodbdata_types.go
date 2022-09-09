@@ -49,7 +49,7 @@ type MongoDBDataField struct {
 // MongoDBDataStatus defines the observed state of MongoDBData
 type MongoDBDataStatus struct {
 	// +kubebuilder:default="Pending"
-	State string `json:"state"`
+	State string `json:"state,omitempty"`
 
 	// mongodb record ObjectID
 	ObjectID   string             `json:"object_id,omitempty"`

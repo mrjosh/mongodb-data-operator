@@ -24,12 +24,17 @@ import (
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/go-logr/logr"
 	mongov1 "github.com/mrjosh/mongodb-data-operator/api/v1"
 	"github.com/mrjosh/mongodb-data-operator/pkg/mongodb"
 	"github.com/pingcap/errors"
+)
+
+var (
+	mongoDBConfigFinalizerName = "mongo.snappcloud.io/mongodb-data-finalizer"
 )
 
 // MongoDBConfigReconciler reconciles a MongoDBConfig object
@@ -61,14 +66,53 @@ func (r *MongoDBConfigReconciler) Reconcile(ctx context.Context, req reconcile.R
 
 	mongoCfg := &mongov1.MongoDBConfig{}
 	if err := r.Get(ctx, req.NamespacedName, mongoCfg); err != nil {
-
 		if errors.IsNotFound(err) {
 			// don't requeue on deletions, which yield a non-found object
 			log.Info("ignoring", "reason", "not found", "err", err)
 		}
-
 		log.Error(err, "failed to get the mongo-config")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	// examine DeletionTimestamp to determine if object is under deletion
+	if mongoCfg.ObjectMeta.DeletionTimestamp.IsZero() {
+
+		// The object is not being deleted, so if it does not have our finalizer,
+		// then lets add the finalizer and update the object. This is equivalent
+		// registering our finalizer.
+		if !controllerutil.ContainsFinalizer(mongoCfg, mongoDBConfigFinalizerName) {
+
+			if controllerutil.AddFinalizer(mongoCfg, mongoDBConfigFinalizerName) {
+
+				if err := r.Update(ctx, mongoCfg); err != nil {
+					log.Error(err, "unable to update target")
+					return requeue(err)
+				}
+			}
+
+		}
+
+	} else {
+
+		if controllerutil.ContainsFinalizer(mongoCfg, mongoDBConfigFinalizerName) {
+
+			// our finalizer is present, so lets handle any external dependency
+			// check if MongoDBConfig own any MongoDBData?
+
+			// remove our finalizer from the list and update it.
+			if controllerutil.RemoveFinalizer(mongoCfg, mongoDBConfigFinalizerName) {
+
+				mongoCfg.Status.Ready = string(mongov1.Terminating)
+				if err := r.Update(ctx, mongoCfg); err != nil {
+					log.Error(err, "unable to update target")
+					return requeue(err)
+				}
+			}
+
+		}
+
+		// Stop reconciliation as the item is being deleted
+		return doNotRequeue()
 	}
 
 	// try to connect to the mongodb url

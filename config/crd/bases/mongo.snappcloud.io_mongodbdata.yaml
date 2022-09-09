@@ -140,18 +140,13 @@ spec:
                   - type
                   type: object
                 type: array
-              objectID:
+              object_id:
                 description: mongodb record ObjectID
                 type: string
               state:
                 default: Pending
                 type: string
-            required:
-            - objectID
-            - state
             type: object
-        required:
-        - status
         type: object
     served: true
     storage: true

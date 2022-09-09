@@ -32,16 +32,29 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/go-logr/logr"
 	mongov1 "github.com/mrjosh/mongodb-data-operator/api/v1"
 	"github.com/mrjosh/mongodb-data-operator/pkg/mongodb"
+	"github.com/operator-framework/operator-lib/handler"
 	"github.com/pingcap/errors"
+	"github.com/prometheus/client_golang/prometheus"
+	"sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
 var (
-	finalizerName = "mongo.snappcloud.io/finalizer"
+	mongoDBDataFinalizerName = "mongo.snappcloud.io/mongodb-data-finalizer"
+	histogramVec             = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Name: "mongodb_data_latency_histogram",
+		Help: "Histogram of response time for Reconcile in seconds",
+	}, []string{"name", "state"})
 )
+
+func init() {
+	// Register custom metrics with the global prometheus registry
+	metrics.Registry.MustRegister(histogramVec)
+}
 
 // MongoDBDataReconciler reconciles a MongoDBData object
 type MongoDBDataReconciler struct {
@@ -67,6 +80,8 @@ type MongoDBDataReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
 func (r *MongoDBDataReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 
+	histogramTimeStart := time.Now()
+
 	log := r.Log.WithValues("mongodb-data", req.NamespacedName)
 	log.Info("Reconciling MongoDBData")
 
@@ -79,16 +94,12 @@ func (r *MongoDBDataReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return requeue(client.IgnoreNotFound(err))
 	}
 
-	if mongoData.Status.State == "" {
-
-		// The object is being deleted
-		mongoData.Status.State = string(mongov1.MongoDBDataConditionPending)
-		if err := r.Status().Update(ctx, mongoData); err != nil {
-			log.Error(err, "unable to update target's status object")
-			return requeue(err)
-		}
-
-	}
+	defer func() {
+		histogramVec.WithLabelValues(
+			mongoData.ObjectMeta.Name,
+			mongoData.Status.State,
+		).Observe(time.Since(histogramTimeStart).Seconds())
+	}()
 
 	// Check if the MongoDBConfig exists
 	mongoCfg := &mongov1.MongoDBConfig{}
@@ -108,6 +119,18 @@ func (r *MongoDBDataReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 		log.Error(err, fmt.Sprintf("failed to get the mongo-config %s", mongoData.Spec.DB))
 		return requeue(err)
+	}
+
+	if mongoData.Status.State == "" {
+
+		// The object is being deleted
+		mongoData.Status.State = string(mongov1.MongoDBDataConditionPending)
+		if err := r.Status().Update(ctx, mongoData); err != nil {
+			log.Error(err, "unable to update target's status object")
+			return requeue(err)
+		}
+
+		return ctrl.Result{Requeue: true}, nil
 	}
 
 	// create a new mongodb client
@@ -134,9 +157,9 @@ func (r *MongoDBDataReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		// The object is not being deleted, so if it does not have our finalizer,
 		// then lets add the finalizer and update the object. This is equivalent
 		// registering our finalizer.
-		if !controllerutil.ContainsFinalizer(mongoData, finalizerName) {
+		if !controllerutil.ContainsFinalizer(mongoData, mongoDBDataFinalizerName) {
 
-			if controllerutil.AddFinalizer(mongoData, finalizerName) {
+			if controllerutil.AddFinalizer(mongoData, mongoDBDataFinalizerName) {
 
 				if err := r.Update(ctx, mongoData); err != nil {
 					log.Error(err, "unable to update target")
@@ -148,7 +171,7 @@ func (r *MongoDBDataReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	} else {
 
-		if controllerutil.ContainsFinalizer(mongoData, finalizerName) {
+		if controllerutil.ContainsFinalizer(mongoData, mongoDBDataFinalizerName) {
 
 			// our finalizer is present, so lets handle any external dependency
 			if err := r.deleteDocument(ctx, collection, mongoData); err != nil {
@@ -159,7 +182,7 @@ func (r *MongoDBDataReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			}
 
 			// remove our finalizer from the list and update it.
-			if controllerutil.RemoveFinalizer(mongoData, finalizerName) {
+			if controllerutil.RemoveFinalizer(mongoData, mongoDBDataFinalizerName) {
 
 				mongoData.Status.State = string(mongov1.MongoDBDataConditionDeleting)
 				if err := r.Update(ctx, mongoData); err != nil {
@@ -204,13 +227,6 @@ func (r *MongoDBDataReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	}
 
 	return doNotRequeue()
-}
-
-// SetupWithManager sets up the controller with the Manager.
-func (r *MongoDBDataReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&mongov1.MongoDBData{}).
-		Complete(r)
 }
 
 // updateDocument will update the current MongoDBData document from database
@@ -318,4 +334,13 @@ func (r *MongoDBDataReconciler) deleteDocument(ctx context.Context, coll *mongo.
 	}
 	_, err = coll.DeleteOne(ctx, bson.M{"_id": objectID})
 	return client.IgnoreNotFound(err)
+}
+
+// SetupWithManager sets up the controller with the Manager.
+func (r *MongoDBDataReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&mongov1.MongoDBData{}).
+		// registers an InstrumentedEnqueueRequest prometheus metric for mongov1.MongoDBData
+		Watches(&source.Kind{Type: &mongov1.MongoDBData{}}, &handler.InstrumentedEnqueueRequestForObject{}).
+		Complete(r)
 }

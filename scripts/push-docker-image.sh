@@ -51,7 +51,7 @@ done
 
 # Build images and rename them for each remote registry
 for arch in ${CPU_ARCHS}; do
-	make --always-make image GOARCH="$arch" TAG="${TAG}-$arch"
+	make --always-make image GOARCH="$arch" IMG="${IMAGE_OPERATOR}" TAG="${TAG}-$arch"
 	# Retag operator image
 	for i in ${OPERATORS}; do
 		docker tag "${IMAGE_OPERATOR}:${TAG}-$arch" "${i}:${TAG}-$arch"

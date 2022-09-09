@@ -10,10 +10,6 @@ jobs:
   build_and_push:
     name: Push Docker image to Dockerhub
     runs-on: ubuntu-latest
-    env:
-      DOCKER_REGISTRY: ghcr.io
-      DOCKER_IMAGE: mrjosh/mongodb-data-operator
-      DOCKER_TARGET_PLATFORM: linux/amd64,linux/arm64,linux/arm/v7
     steps:
       - name: Check out the repo
         uses: actions/checkout@v2
@@ -40,7 +36,7 @@ jobs:
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
-          username: ${{ secrets.DOCKER_USERNAME }}
+          username: ${{ github.actor }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build and push
@@ -48,5 +44,5 @@ jobs:
         with:
           context: .
           push: true
-          platforms: $DOCKER_TARGET_PLATFORM
-          tags: $DOCKER_IMAGE:$GITHUB_REF_NAME
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          tags: mrjosh/mongodb-data-operator:$GITHUB_REF_NAME

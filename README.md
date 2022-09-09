@@ -31,6 +31,56 @@ simply use the below command for prometheus installation on your cluster
 kubectl apply -f https://raw.githubusercontent.com/coreos/prometheus-operator/release-0.33/bundle.yaml
 ```
 
+### Installation
+To quickly try out just the MongoDB data Operator inside a cluster, run the following command:
+```sh
+kubectl create -f https://github.com/mrjosh/mongodb-data-operator/raw/develop/bundle.yaml
+```
+
+### Removal
+To remove the MongoDB data Operator, simply run:
+```sh
+kubectl delete -f https://github.com/mrjosh/mongodb-data-operator/raw/develop/bundle.yaml
+```
+
+## Examples
+Define your mongodb connection inside a MongoDBConfig cluster-scoped resource
+```sh
+cat <<EOF | kubectl create -f -
+  apiVersion: mongo.snappcloud.io/v1
+  kind: MongoDBConfig
+  metadata:
+    name: mongo1
+  spec:
+    mongourl: mongodb://127.0.0.1:27017
+    collection: mongo1
+EOF
+```
+
+Define your mongodb document inside a MongoDBData namespace-scoped resource
+```sh
+cat <<EOF | kubectl create -f -
+  apiVersion: mongo.snappcloud.io/v1
+  kind: MongoDBData
+  metadata:
+    name: example
+    namespace: sth
+  spec:
+    db: mongo1
+    data:
+      firstname: mohammad
+      lastname: yosefpor
+      email: myusefpur@gmail.com
+      age: 70
+EOF
+```
+
+## MongoDB docker-compose
+You can quickly run a mongodb database inside docker container
+```sh
+docker compose -f mongodb-docker-compose.yaml up -d
+```
+
 ## Contributing
 Thank you for considering contributing to MongoDB data operator project!
 

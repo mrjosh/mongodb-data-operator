@@ -233,7 +233,7 @@ bundle: manifests kustomize ## Generate bundle manifests and metadata, then vali
 .PHONY: bundle.yaml
 bundle.yaml:
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/default >> bundle.yaml
+	$(KUSTOMIZE) build config/default > bundle.yaml
 
 .PHONY: bundle-build
 bundle-build: ## Build the bundle image.

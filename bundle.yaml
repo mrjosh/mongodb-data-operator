@@ -583,7 +583,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: localhost:5001/mongodb-data-operator:latest
+        image: ghcr.io/mrjosh/mongodb-data-operator-dev:v0.0.1-424cff1
         livenessProbe:
           httpGet:
             path: /healthz

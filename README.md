@@ -1,3 +1,8 @@
+![golangci-lint-status](https://github.com/mrjosh/mongodb-data-operator/actions/workflows/golangci-lint.yml/badge.svg)
+![Publish](https://github.com/mrjosh/mongodb-data-operator/actions/workflows/publish.yaml/badge.svg)
+[![bundle.yaml](https://img.shields.io/badge/bundle.yaml-Kubernetes%20CRDS-brightgreen)](https://github.com/mrjosh/mongodb-data-operator/raw/develop/bundle.yaml)
+![License](https://img.shields.io/github/license/mrjosh/mongodb-data-operator)
+
 # MongoDB Data Operator
 The MongoDB Data Operator aims to manage the full lifecycle of a mongodb document in you Kubernetes container platforms.
 

@@ -14,6 +14,9 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v2
 
+      - name: Setting up BRANCH
+        run: echo "BRANCH=${GITHUB_REF##*/}" >> $GITHUB_ENV
+
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
@@ -47,4 +50,4 @@ jobs:
           platforms: linux/amd64,linux/arm64,linux/arm/v7
           tags: mrjosh/mongodb-data-operator:${{ env.BRANCH }}
           build-args: |
-            BRANCH=$GITHUB_REF_NAME
+            BRANCH=${{ env.BRANCH }}

@@ -79,7 +79,7 @@ func (r *MongoDBData) ValidateUpdate(old runtime.Object) error {
 	}
 
 	if value != oldmdbd.Spec.DB {
-		return field.Invalid(key, value, "Can not have a change of db field")
+		return field.Forbidden(key, "cannot have a change on db field")
 	}
 
 	if err := r.validateSpecs(); err != nil {

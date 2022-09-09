@@ -1,0 +1,345 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "mongo.snappcloud.io/v1",
+          "kind": "MongoDBConfig",
+          "metadata": {
+            "name": "mongo1"
+          },
+          "spec": {
+            "collection": "xxx",
+            "mongourl": "mongodb://snappcloud:super-secure-password@mongodb-data-operator-mongodb-1:27017/?authSource=admin"
+          }
+        },
+        {
+          "apiVersion": "mongo.snappcloud.io/v1",
+          "kind": "MongoDBData",
+          "metadata": {
+            "name": "mongodbdata-sample",
+            "namespace": "smth"
+          },
+          "spec": {
+            "data": {
+              "age": 27,
+              "email": "josheghani.dev@gmail.com",
+              "firstname": "Alirezaj",
+              "lastname": "Josheghani"
+            },
+            "db": "mongo1"
+          }
+        }
+      ]
+    capabilities: Basic Install
+    operators.operatorframework.io/builder: operator-sdk-v1.23.0
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v4-alpha
+  name: mongodb-data-operator.v0.0.1
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: MongoDBConfig is the Schema for the mongodbconfigs API
+      displayName: Mongo DBConfig
+      kind: MongoDBConfig
+      name: mongodbconfigs.mongo.snappcloud.io
+      version: v1
+    - description: MongoDBData is the Schema for the mongodbdata API
+      displayName: MongoDBData
+      kind: MongoDBData
+      name: mongodbdata.mongo.snappcloud.io
+      version: v1
+  description: The MongoDB Data Operator aims to manage the full lifecycle of a mongodb
+    document in you Kubernetes container platforms.
+  displayName: MongoDB Data Operator
+  icon:
+  - base64data: ""
+    mediatype: ""
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - mongo.snappcloud.io
+          resources:
+          - mongodbconfigs
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - mongo.snappcloud.io
+          resources:
+          - mongodbconfigs/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - mongo.snappcloud.io
+          resources:
+          - mongodbconfigs/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - mongo.snappcloud.io
+          resources:
+          - mongodbdata
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - mongo.snappcloud.io
+          resources:
+          - mongodbdata/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - mongo.snappcloud.io
+          resources:
+          - mongodbdata/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - authentication.k8s.io
+          resources:
+          - tokenreviews
+          verbs:
+          - create
+        - apiGroups:
+          - authorization.k8s.io
+          resources:
+          - subjectaccessreviews
+          verbs:
+          - create
+        serviceAccountName: mongodb-data-operator-controller-manager
+      deployments:
+      - label:
+          control-plane: controller-manager
+        name: mongodb-data-operator-controller-manager
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              control-plane: controller-manager
+          strategy: {}
+          template:
+            metadata:
+              annotations:
+                kubectl.kubernetes.io/default-container: manager
+              labels:
+                control-plane: controller-manager
+            spec:
+              containers:
+              - args:
+                - --health-probe-bind-address=:8081
+                - --metrics-bind-address=127.0.0.1:8080
+                - --leader-elect
+                command:
+                - /manager
+                image: localhost:5001/mongodb-data-operator:latest
+                livenessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: 8081
+                  initialDelaySeconds: 15
+                  periodSeconds: 20
+                name: manager
+                ports:
+                - containerPort: 9443
+                  name: webhook-server
+                  protocol: TCP
+                - containerPort: 8080
+                  name: metrics
+                readinessProbe:
+                  httpGet:
+                    path: /readyz
+                    port: 8081
+                  initialDelaySeconds: 5
+                  periodSeconds: 10
+                resources:
+                  limits:
+                    cpu: 500m
+                    memory: 128Mi
+                  requests:
+                    cpu: 10m
+                    memory: 64Mi
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  capabilities:
+                    drop:
+                    - ALL
+                volumeMounts:
+                - mountPath: /tmp/k8s-webhook-server/serving-certs
+                  name: cert
+                  readOnly: true
+              - args:
+                - --secure-listen-address=0.0.0.0:8443
+                - --upstream=http://127.0.0.1:8080/
+                - --logtostderr=true
+                - --v=0
+                image: gcr.io/kubebuilder/kube-rbac-proxy:v0.13.0
+                name: kube-rbac-proxy
+                ports:
+                - containerPort: 8443
+                  name: https
+                  protocol: TCP
+                resources:
+                  limits:
+                    cpu: 500m
+                    memory: 128Mi
+                  requests:
+                    cpu: 5m
+                    memory: 64Mi
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  capabilities:
+                    drop:
+                    - ALL
+              securityContext:
+                runAsNonRoot: true
+              serviceAccountName: mongodb-data-operator-controller-manager
+              terminationGracePeriodSeconds: 10
+              volumes:
+              - name: cert
+                secret:
+                  defaultMode: 420
+                  secretName: webhook-server-cert
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - coordination.k8s.io
+          resources:
+          - leases
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
+        serviceAccountName: mongodb-data-operator-controller-manager
+    strategy: deployment
+  installModes:
+  - supported: false
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - mongodb
+  - operator
+  - mongodb-data-operator
+  links:
+  - name: Mongodb Data Operator
+    url: https://mongodb-data-operator.domain
+  maintainers:
+  - email: josheghani.dev@gmail.com
+    name: Alireza Josheghani
+  maturity: alpha
+  provider:
+    name: mongodb-data-operator
+    url: https://github.com/mrjosh/mongodb-data-operator
+  version: 0.0.1
+  webhookdefinitions:
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    conversionCRDs:
+    - mongodbconfigs.mongo.snappcloud.io
+    - mongodbdata.mongo.snappcloud.io
+    deploymentName: mongodb-data-operator-controller-manager
+    generateName: cmongodbconfigsmongodbdata.kb.io
+    sideEffects: None
+    targetPort: 9443
+    type: ConversionWebhook
+    webhookPath: /convert
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: mongodb-data-operator-controller-manager
+    failurePolicy: Fail
+    generateName: vmongodbconfig.kb.io
+    rules:
+    - apiGroups:
+      - mongo.snappcloud.io
+      apiVersions:
+      - v1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - mongodbconfigs
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-mongo-snappcloud-io-v1-mongodbconfig
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: mongodb-data-operator-controller-manager
+    failurePolicy: Fail
+    generateName: vmongodbdata.kb.io
+    rules:
+    - apiGroups:
+      - mongo.snappcloud.io
+      apiVersions:
+      - v1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - mongodbdata
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-mongo-snappcloud-io-v1-mongodbdata

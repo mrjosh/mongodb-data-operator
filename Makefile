@@ -268,7 +268,7 @@ catalog-push: ## Push a catalog image.
 
 .PHONY: kind
 kind: ## Create a new kind cluster
-	@./bin/kind-with-registry.sh
+	@./scripts/kind-with-registry.sh
 
 .PHONY: mongodb
 mongodb: ## Bring up a mongodb docker container

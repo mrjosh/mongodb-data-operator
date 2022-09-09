@@ -5,8 +5,7 @@
 *.dll
 *.so
 *.dylib
-bin/*
-!/bin/kind-with-registry.sh
+bin/
 testbin/*
 
 # Test binary, build with `go test -c`

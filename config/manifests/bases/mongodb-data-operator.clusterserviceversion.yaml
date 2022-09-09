@@ -1,0 +1,56 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[]'
+    capabilities: Basic Install
+  name: mongodb-data-operator.v0.0.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: MongoDBConfig is the Schema for the mongodbconfigs API
+      displayName: Mongo DBConfig
+      kind: MongoDBConfig
+      name: mongodbconfigs.mongo.snappcloud.io
+      version: v1
+    - description: MongoDBData is the Schema for the mongodbdata API
+      displayName: MongoDBData
+      kind: MongoDBData
+      name: mongodbdata.mongo.snappcloud.io
+      version: v1
+  description: The MongoDB Data Operator aims to manage the full lifecycle of a mongodb
+    document in you Kubernetes container platforms.
+  displayName: MongoDB Data Operator
+  icon:
+  - base64data: ""
+    mediatype: ""
+  install:
+    spec:
+      deployments: null
+    strategy: ""
+  installModes:
+  - supported: false
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - mongodb
+  - operator
+  - mongodb-data-operator
+  links:
+  - name: Mongodb Data Operator
+    url: https://mongodb-data-operator.domain
+  maintainers:
+  - email: josheghani.dev@gmail.com
+    name: Alireza Josheghani
+  maturity: alpha
+  provider:
+    name: mongodb-data-operator
+    url: https://github.com/mrjosh/mongodb-data-operator
+  version: 0.0.0

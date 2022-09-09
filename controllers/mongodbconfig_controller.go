@@ -24,7 +24,6 @@ import (
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/go-logr/logr"
@@ -70,49 +69,7 @@ func (r *MongoDBConfigReconciler) Reconcile(ctx context.Context, req reconcile.R
 			// don't requeue on deletions, which yield a non-found object
 			log.Info("ignoring", "reason", "not found", "err", err)
 		}
-		log.Error(err, "failed to get the mongo-config")
-		return ctrl.Result{}, client.IgnoreNotFound(err)
-	}
-
-	// examine DeletionTimestamp to determine if object is under deletion
-	if mongoCfg.ObjectMeta.DeletionTimestamp.IsZero() {
-
-		// The object is not being deleted, so if it does not have our finalizer,
-		// then lets add the finalizer and update the object. This is equivalent
-		// registering our finalizer.
-		if !controllerutil.ContainsFinalizer(mongoCfg, mongoDBConfigFinalizerName) {
-
-			if controllerutil.AddFinalizer(mongoCfg, mongoDBConfigFinalizerName) {
-
-				if err := r.Client.Update(ctx, mongoCfg); err != nil {
-					log.Error(err, "unable to update target")
-					return requeue(err)
-				}
-			}
-
-		}
-
-	} else {
-
-		if controllerutil.ContainsFinalizer(mongoCfg, mongoDBConfigFinalizerName) {
-
-			// our finalizer is present, so lets handle any external dependency
-			// check if MongoDBConfig own any MongoDBData?
-
-			// remove our finalizer from the list and update it.
-			if controllerutil.RemoveFinalizer(mongoCfg, mongoDBConfigFinalizerName) {
-
-				mongoCfg.Status.Ready = string(mongov1.Terminating)
-				if err := r.Client.Update(ctx, mongoCfg); err != nil {
-					log.Error(err, "unable to update target")
-					return requeue(err)
-				}
-			}
-
-		}
-
-		// Stop reconciliation as the item is being deleted
-		return doNotRequeue()
+		return requeue(client.IgnoreNotFound(err))
 	}
 
 	// try to connect to the mongodb url

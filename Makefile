@@ -14,6 +14,8 @@ ifneq ($(origin CHANNELS), undefined)
 BUNDLE_CHANNELS := --channels=$(CHANNELS)
 endif
 
+CONTAINER_CLI ?= docker
+
 # DEFAULT_CHANNEL defines the default channel used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g DEFAULT_CHANNEL = "stable")
 # To re-generate a bundle for any other default channel without changing the default setup, you can:
@@ -168,6 +170,17 @@ deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in
 
 .PHONY: redeploy
 redeploy: all manifests undeploy build-deploy ## Re-Deploy controller to the K8s cluster specified in ~/.kube/config.
+
+.PHONY: image
+image: GOOS := linux # Overriding GOOS value for docker image build
+image: .hack-operator-image
+
+.hack-operator-image:
+# Create empty target file, for the sole purpose of recording when this target
+# was last executed via the last-modification timestamp on the file. See
+# https://www.gnu.org/software/make/manual/make.html#Empty-Targets
+	$(CONTAINER_CLI) build --build-arg ARCH=$(ARCH) --build-arg OS=$(GOOS) -t $(IMG):$(TAG) .
+	touch $@
 
 .PHONY: build-deploy
 build-deploy: docker-build docker-push manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.

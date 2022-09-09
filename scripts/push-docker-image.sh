@@ -17,7 +17,7 @@ set -e
 set -o pipefail
 
 CPU_ARCHS="amd64 arm64 arm ppc64le s390x"
-REGISTRIES="${REGISTRIES:-"docker.io ghcr.io"}"
+REGISTRIES="${REGISTRIES:-"ghcr.io"}"
 
 # IMAGE_OPERATOR need to be exported to be used by `make`
 export IMAGE_OPERATOR="${IMAGE_OPERATOR:-"mrjosh/mongodb-data-operator"}"

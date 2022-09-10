@@ -82,6 +82,11 @@ cat <<EOF | kubectl create -f -
 EOF
 ```
 
+## Operator docker image repository
+```sh
+docker pull ghcr.io/mrjosh/mongodb-data-operator-dev:v0.0.1-b289017
+```
+
 ## MongoDB docker-compose
 You can quickly run a mongodb database inside docker container
 ```sh

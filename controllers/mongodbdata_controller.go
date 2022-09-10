@@ -183,13 +183,10 @@ func (r *MongoDBDataReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			}
 
 			// remove our finalizer from the list and update it.
-			if controllerutil.RemoveFinalizer(mongoData, mongoDBDataFinalizerName) {
-
-				mongoData.Status.State = string(mongov1.MongoDBDataConditionDeleting)
-				if err := r.Client.Update(ctx, mongoData); err != nil {
-					log.Error(err, "unable to update target")
-					return requeue(err)
-				}
+			controllerutil.RemoveFinalizer(mongoData, mongoDBDataFinalizerName)
+			if err := r.Client.Update(ctx, mongoData); err != nil {
+				log.Error(err, "unable to update target")
+				return requeue(err)
 			}
 
 		}
@@ -301,6 +298,30 @@ func (r *MongoDBDataReconciler) insertDocument(
 	mongoCfg *mongov1.MongoDBConfig,
 	document []byte,
 ) (ctrl.Result, error) {
+
+	fmt.Println(mongoData.Status.ObjectID)
+
+	// check if we have the document with ObjectID, then ignore the insert
+	if mongoData.Status.ObjectID != "" {
+
+		findOID, err := primitive.ObjectIDFromHex(mongoData.Status.ObjectID)
+		if err != nil {
+			log.Error(err, "unable to decode object_id")
+			return requeue(client.IgnoreNotFound(err))
+		}
+
+		count, err := collection.CountDocuments(ctx, bson.M{"_id": findOID})
+		if err != nil {
+			log.Error(err, "unable to count document with ObjectID ", findOID)
+			return requeue(client.IgnoreNotFound(err))
+		}
+
+		fmt.Println(count)
+
+		if count > 0 {
+			return doNotRequeue()
+		}
+	}
 
 	result, err := collection.InsertOne(ctx, document)
 	if err != nil {

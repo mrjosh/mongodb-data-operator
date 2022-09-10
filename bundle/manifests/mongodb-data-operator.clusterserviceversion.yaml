@@ -24,7 +24,7 @@ metadata:
           },
           "spec": {
             "data": {
-              "age": 27,
+              "age": 25,
               "email": "josheghani.dev@gmail.com",
               "firstname": "Alirezaj",
               "lastname": "Josheghani"

@@ -12,5 +12,4 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
 - name: controller
-  newName: ghcr.io/mrjosh/mongodb-data-operator-dev
-  newTag: v0.0.1-424cff1
+  newName: 127.0.0.1:5001/mongodb-data-operator

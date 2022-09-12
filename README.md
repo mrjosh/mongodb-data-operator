@@ -26,9 +26,13 @@ The Operator acts on the following [custom resource definitions (CRDs)](https://
 
 ## Getting Started
 * You’ll need a Kubernetes cluster to run against. You can use [KIND](https://sigs.k8s.io/kind) to get a local cluster for testing,
-simply, run `make kind` to have a kind cluster inside your docker.
+simply, run `make kind` to have a kind cluster inside your docker. or run against a remote cluster.
 
-* or run against a remote cluster.
+* You'll need CertManager for Admission Webhooks Certificates on cluster. to install certmanager, run:
+```sh
+kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.9.1/cert-manager.yaml
+```
+
 
 ### Prometheus Installation
 
